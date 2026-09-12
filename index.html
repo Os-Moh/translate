@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منصة تعلم ونطق الكلمات الاحترافية | Ultimate Vocabulary Studio</title>
+    <title>منصة نطق وترجمة المفردات | المزودة بمحرك بحث</title>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #4338ca;
-            --primary-light: #eef2ff;
+            --primary-light: #818cf8;
             --bg: #0f172a;
             --card-bg: #1e293b;
             --text-main: #f8fafc;
@@ -24,27 +24,32 @@
         body { background: var(--bg); color: var(--text-main); padding: 20px; min-height: 100vh; }
 
         .header { text-align: center; margin-bottom: 24px; }
-        .header h1 { font-size: 32px; font-weight: 800; color: #818cf8; }
+        .header h1 { font-size: 32px; font-weight: 800; color: var(--primary-light); }
         .header p { color: var(--text-muted); font-size: 15px; }
 
         .container { display: grid; grid-template-columns: 1fr; gap: 20px; max-width: 1300px; margin: 0 auto; }
         @media (min-width: 950px) { .container { grid-template-columns: 340px 1fr; } }
 
-        /* Panel */
+        /* Sidebar Panel */
         .panel { background: var(--card-bg); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); height: fit-content; }
         .upload-box { border: 2px dashed #475569; border-radius: 12px; padding: 25px; text-align: center; cursor: pointer; transition: 0.2s; background: #0f172a; }
-        .upload-box:hover { border-color: #818cf8; background: #1e1b4b; }
+        .upload-box:hover { border-color: var(--primary-light); background: #1e1b4b; }
         .upload-box input { display: none; }
 
         .group { margin-top: 16px; }
         .group label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; font-weight: 700; }
-        select, input[type="range"] { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; color: #fff; outline: none; }
+        select, input[type="range"], input[type="text"] { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: #0f172a; color: #fff; outline: none; font-size: 15px; }
+        input[type="text"]:focus { border-color: var(--primary-light); }
 
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; transition: 0.2s; margin-top: 10px; font-size: 15px; }
         .btn-p { background: var(--primary); color: #fff; }
         .btn-p:hover { background: #3730a3; }
         .btn-s { background: transparent; border: 1px solid var(--border); color: #fff; }
         .btn-s:hover { background: #334155; }
+
+        /* Search Section */
+        .search-container { margin-bottom: 20px; display: flex; gap: 10px; }
+        .search-box { flex: 1; position: relative; }
 
         /* Main Workspace */
         .workspace { background: var(--card-bg); border-radius: var(--radius); padding: 20px; border: 1px solid var(--border); }
@@ -52,9 +57,9 @@
 
         .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; direction: ltr; }
 
-        /* Advanced Word Card */
+        /* Word Card */
         .card { background: #0f172a; border: 1px solid var(--border); border-radius: 12px; padding: 16px; position: relative; transition: 0.2s; }
-        .card:hover { border-color: #818cf8; transform: translateY(-2px); }
+        .card:hover { border-color: var(--primary-light); transform: translateY(-2px); }
         
         .card-top { display: flex; justify-content: space-between; align-items: center; }
         .card-title { font-size: 18px; font-weight: 700; color: #fff; }
@@ -66,7 +71,6 @@
 
         .card-trans { font-size: 15px; color: var(--accent-green); direction: rtl; margin-top: 8px; font-weight: 600; min-height: 22px; }
         
-        /* Image Preview Box */
         .img-container { margin-bottom: 16px; border-radius: 8px; overflow: hidden; max-height: 200px; display: none; text-align: center; background: #000; }
         .img-container img { max-height: 200px; width: auto; object-fit: contain; }
     </style>
@@ -74,8 +78,8 @@
 <body>
 
 <div class="header">
-    <h1>🚀 منصة نطق وترجمة المفردات المتقدمة</h1>
-    <p>استخراج ذكي للعبارات والكلمات، تنقية الشوائب، ونطق مخصص بصوت نقي</p>
+    <h1>🔍 منصة المفردات الذكية مع خيار البحث الفوري</h1>
+    <p>رفع صور القواميس، استخراج الكلمات، والبحث السريع مع الترجمة والنطق الاحترافي</p>
 </div>
 
 <div class="container">
@@ -104,6 +108,14 @@
     </div>
 
     <div class="workspace">
+        <!-- Search Bar -->
+        <div class="search-container">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔎 ابحث عن أي كلمة أو أضف كلمة جديدة..." oninput="filterWords()">
+            </div>
+            <button class="btn btn-p" style="margin-top:0; width:auto; padding: 0 20px;" onclick="addManualWord()">إضافة</button>
+        </div>
+
         <div id="imgBox" class="img-container">
             <img id="imgPre" src="" alt="المعاينة">
         </div>
@@ -116,7 +128,6 @@
 <script>
     let listData = [];
 
-    // استخراج الذكي للكلمات والعبارات المزدوجة والتخلص من الرموز والكلمات غير المفيدة
     function extractPhrasesAndWords(text) {
         const lines = text.split('\n');
         let extracted = [];
@@ -124,7 +135,6 @@
         lines.forEach(line => {
             let cleanedLine = line.replace(/[^a-zA-Z\s-]/g, '').trim();
             if (cleanedLine.length > 2) {
-                // الكلمات أو العبارات الفعالة
                 if (cleanedLine.split(/\s+/).length <= 3) {
                     extracted.push(cleanedLine);
                 } else {
@@ -156,11 +166,10 @@
         document.getElementById('imgBox').style.display = 'block';
 
         const status = document.getElementById('status');
-        const grid = document.getElementById('grid');
         
         status.style.display = 'block';
-        status.innerText = "⏳ جاري قراءة الكلمات والعبارات وتنبيتها عالي الدقة...";
-        grid.innerHTML = "";
+        status.innerText = "⏳ جاري قراءة الصورة وتنقيتها...";
+        document.getElementById('grid').innerHTML = "";
         listData = [];
 
         try {
@@ -168,40 +177,75 @@
             const items = extractPhrasesAndWords(text);
 
             if (items.length === 0) {
-                status.innerText = "❌ لم يتم التعرف على كلمات واضحة. حاول مجدداً بصورة أوضح.";
+                status.innerText = "❌ لم يتم التعرف على كلمات واضحة.";
                 return;
             }
 
             status.innerText = `✅ تم استخراج (${items.length}) كلمة وعبارة بنجاح:`;
 
-            items.forEach((item, idx) => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.id = `card-${idx}`;
-                
-                card.innerHTML = `
-                    <div class="card-top">
-                        <span class="card-title">${item}</span>
-                        <div class="actions">
-                            <button class="icon-btn" title="بطيء" onclick="speak('${item}', 0.4)">🐢</button>
-                            <button class="icon-btn" title="نطق عادي" onclick="speak('${item}', null)">🔊</button>
-                            <button class="icon-btn delete-btn" title="حذف" onclick="deleteCard(${idx})">✕</button>
-                        </div>
-                    </div>
-                    <div class="card-trans" id="trans-${idx}">⏳ جاري الترجمة...</div>
-                `;
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                const tr = await fetchTranslation(item);
+                listData.push({ id: i, word: item, translation: tr });
+            }
 
-                grid.appendChild(card);
-
-                fetchTranslation(item).then(tr => {
-                    document.getElementById(`trans-${idx}`).innerText = tr;
-                    listData.push({ id: idx, word: item, translation: tr });
-                });
-            });
+            renderGrid(listData);
 
         } catch (err) {
             status.innerText = "❌ حدث خطأ في النظام أثناء معالجة الصورة.";
         }
+    }
+
+    function renderGrid(data) {
+        const grid = document.getElementById('grid');
+        grid.innerHTML = "";
+
+        if (data.length === 0) {
+            grid.innerHTML = "<p style='color: var(--text-muted); text-align: center; grid-column: 1/-1;'>لا توجد نتائج تطابق بحثك.</p>";
+            return;
+        }
+
+        data.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.id = `card-${item.id}`;
+            
+            card.innerHTML = `
+                <div class="card-top">
+                    <span class="card-title">${item.word}</span>
+                    <div class="actions">
+                        <button class="icon-btn" title="بطيء" onclick="speak('${item.word}', 0.4)">🐢</button>
+                        <button class="icon-btn" title="نطق عادي" onclick="speak('${item.word}', null)">🔊</button>
+                        <button class="icon-btn delete-btn" title="حذف" onclick="deleteCard(${item.id})">✕</button>
+                    </div>
+                </div>
+                <div class="card-trans">${item.translation}</div>
+            `;
+
+            grid.appendChild(card);
+        });
+    }
+
+    function filterWords() {
+        const query = document.getElementById('searchInput').value.toLowerCase().trim();
+        const filtered = listData.filter(d => 
+            d.word.toLowerCase().includes(query) || d.translation.includes(query)
+        );
+        renderGrid(filtered);
+    }
+
+    async function addManualWord() {
+        const input = document.getElementById('searchInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const tr = await fetchTranslation(text);
+        const newItem = { id: Date.now(), word: text, translation: tr };
+        
+        listData.unshift(newItem);
+        input.value = "";
+        filterWords();
+        speak(text, null);
     }
 
     function speak(text, customRate) {
@@ -212,10 +256,9 @@
         window.speechSynthesis.speak(utterance);
     }
 
-    function deleteCard(idx) {
-        const el = document.getElementById(`card-${idx}`);
-        if (el) el.remove();
-        listData = listData.filter(item => item.id !== idx);
+    function deleteCard(id) {
+        listData = listData.filter(item => item.id !== id);
+        filterWords();
     }
 
     function playAll() {
