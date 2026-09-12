@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مطور قارئ ومترجم الكلمات الذكي</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; direction: rtl; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        h2 { color: #1a73e8; text-align: center; margin-bottom: 20px; }
+        .controls { display: flex; gap: 15px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; background: #f8f9fa; padding: 15px; border-radius: 8px; }
+        .control-group { display: flex; align-items: center; gap: 8px; }
+        .upload-section { border: 2px dashed #1a73e8; padding: 25px; text-align: center; border-radius: 8px; background: #e8f0fe; cursor: pointer; margin-bottom: 20px; }
+        .upload-section input { display: none; }
+        .status { text-align: center; font-weight: bold; color: #d93025; margin: 15px 0; }
+        .word-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; direction: ltr; margin-top: 20px; }
+        .word-card { background: #fff; border: 1px solid #dadce0; border-radius: 8px; padding: 14px; cursor: pointer; transition: all 0.2s; text-align: center; }
+        .word-card:hover { border-color: #1a73e8; background: #e8f0fe; transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .word-title { font-size: 19px; font-weight: bold; color: #202124; margin-bottom: 6px; }
+        .word-translation { font-size: 15px; color: #1e8e3e; font-weight: 500; direction: rtl; margin-top: 4px; }
+        .word-sub { font-size: 11px; color: #70757a; margin-top: 6px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🔊 قارئ ومترجم الكلمات الذكي من الصور</h2>
+    
+    <div class="controls">
+        <div class="control-group">
+            <label>اللكنة:</label>
+            <select id="voiceAccent">
+                <option value="en-US">أمريكي (US)</option>
+                <option value="en-GB">بريطاني (UK)</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label>سرعة النطق:</label>
+            <input type="range" id="speechRate" min="0.5" max="1.2" step="0.1" value="0.8">
+        </div>
+    </div>
+
+    <div class="upload-section" onclick="document.getElementById('imageInput').click()">
+        <p>📷 اضغط هنا لرفع صورة الكلمات</p>
+        <input type="file" id="imageInput" accept="image/*" onchange="processImage(event)">
+    </div>
+
+    <div id="status" class="status"></div>
+    <div id="wordsContainer" class="word-grid"></div>
+</div>
+
+<script>
+    async function translateWord(word) {
+        try {
+            const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|ar`);
+            const data = await response.json();
+            return data.responseData.translatedText || "تعذر الترجمة";
+        } catch (error) {
+            return "خطأ بالترجمة";
+        }
+    }
+
+    async function processImage(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const status = document.getElementById('status');
+        const container = document.getElementById('wordsContainer');
+        
+        status.innerText = "⏳ جاري استخراج الكلمات وترجمتها... انتظر لحظات";
+        container.innerHTML = "";
+
+        Tesseract.recognize(file, 'eng').then(async ({ data: { text } }) => {
+            const words = text.match(/[a-zA-Z]+/g);
+            
+            if (!words) {
+                status.innerText = "❌ لم يتم العثور على كلمات إنجليزية بالصورة.";
+                return;
+            }
+
+            const uniqueWords = [...new Set(words)].filter(word => word.length > 1);
+            status.innerText = `✅ تم العثور على (${uniqueWords.length}) كلمة. اضغط على أي بطاقة للاستماع:`;
+
+            for (const word of uniqueWords) {
+                const card = document.createElement('div');
+                card.className = 'word-card';
+                
+                card.innerHTML = `
+                    <div class="word-title">🔊 ${word}</div>
+                    <div class="word-translation">⏳ جاري الترجمة...</div>
+                    <div class="word-sub">اضغط للنطق</div>
+                `;
+                
+                card.onclick = () => speakWord(word);
+                container.appendChild(card);
+
+                // جلب الترجمة وتحديث البطاقة
+                translateWord(word).then(arabicText => {
+                    const transDiv = card.querySelector('.word-translation');
+                    if (transDiv) transDiv.innerText = arabicText;
+                });
+            }
+        }).catch(() => {
+            status.innerText = "❌ حدث خطأ أثناء قراءة الصورة.";
+        });
+    }
+
+    function speakWord(word) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(word);
+        utterance.lang = document.getElementById('voiceAccent').value;
+        utterance.rate = parseFloat(document.getElementById('speechRate').value);
+        window.speechSynthesis.speak(utterance);
+    }
+</script>
+
+</body>
+</html>
